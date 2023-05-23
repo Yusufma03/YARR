@@ -27,7 +27,7 @@ class LogWriter(object):
         self._configs = configs
         os.makedirs(logdir, exist_ok=True)
         if wandb_logging:
-            wandb.init(
+            self._writer = wandb.init(
                 project=project_name,
                 config=configs,
             )
@@ -82,10 +82,7 @@ class LogWriter(object):
                 if isinstance(summary, ScalarSummary):
                     data[summary.name] = summary.value
                 elif isinstance(summary, HistogramSummary):
-                    data[summary.name] = wandb.plot.histogram(
-                        wandb.Table(data=summary.value),
-                        title=summary.name,
-                    )
+                    continue
                 elif isinstance(summary, ImageSummary):
                     # Only grab first item in batch
                     v = (summary.value if summary.value.ndim == 3 else
