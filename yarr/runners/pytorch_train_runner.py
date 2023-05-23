@@ -43,7 +43,10 @@ class PyTorchTrainRunner(TrainRunner):
                  replay_ratio: Optional[float] = None,
                  tensorboard_logging: bool = True,
                  csv_logging: bool = False,
-                 buffers_per_batch: int = -1  # -1 = all
+                 buffers_per_batch: int = -1,  # -1 = all
+                 wandb_logging: bool = True,
+                 configs: dict = {},
+                 project_name: str = 'dev_project',
                  ):
         super(PyTorchTrainRunner, self).__init__(
             agent, env_runner, wrapped_replay_buffer,
@@ -67,6 +70,7 @@ class PyTorchTrainRunner(TrainRunner):
 
         self._train_device = train_device
         self._tensorboard_logging = tensorboard_logging
+        self._wandb_logging = wandb_logging
         self._csv_logging = csv_logging
 
         if replay_ratio is not None and replay_ratio < 0:
@@ -78,7 +82,13 @@ class PyTorchTrainRunner(TrainRunner):
             logging.info("'logdir' was None. No logging will take place.")
         else:
             self._writer = LogWriter(
-                self._logdir, tensorboard_logging, csv_logging)
+                self._logdir,
+                tensorboard_logging,
+                csv_logging,
+                wandb_logging,
+                configs,
+                project_name,
+            )
         if weightsdir is None:
             logging.info(
                 "'weightsdir' was None. No weight saving will take place.")
@@ -219,36 +229,29 @@ class PyTorchTrainRunner(TrainRunner):
                 env_summaries = self._env_runner.summaries()
                 self._writer.add_summaries(i, agent_summaries + env_summaries)
 
+                buffer_summaries = {}
+
                 for r_i, wrapped_buffer in enumerate(self._wrapped_buffer):
-                    self._writer.add_scalar(
-                        i, 'replay%d/add_count' % r_i,
-                        wrapped_buffer.replay_buffer.add_count)
-                    self._writer.add_scalar(
-                        i, 'replay%d/size' % r_i,
-                        wrapped_buffer.replay_buffer.replay_capacity
+                    buffer_summaries['replay%d/add_count' % r_i] = wrapped_buffer.replay_buffer.add_count
+                    replay_size = (wrapped_buffer.replay_buffer.replay_capacity
                         if wrapped_buffer.replay_buffer.is_full()
                         else wrapped_buffer.replay_buffer.add_count)
+                    buffer_summaries['replay%d/add_count' % r_i] = replay_size
 
-                self._writer.add_scalar(
-                    i, 'replay/replay_ratio', replay_ratio)
-                self._writer.add_scalar(
-                    i, 'replay/update_to_insert_ratio',
-                    float(i) / float(
-                        self._get_sum_add_counts() -
-                        init_replay_size + 1e-6))
+                buffer_summaries['replay/replay_ratio'] = replay_ratio
+                buffer_summaries['replay/update_to_insert_ratio'] = (
+                    float(i) / float(self._get_sum_add_counts() -
+                        init_replay_size + 1e-6)
+                )
+                
+                buffer_summaries['monitoring/sample_time_per_item'] = (
+                    sample_time / batch_times_buffers_per_sample
+                )
+                buffer_summaries['monitoring/train_time_per_item'] = (
+                    step_time / batch_times_buffers_per_sample
+                )
 
-                self._writer.add_scalar(
-                    i, 'monitoring/sample_time_per_item',
-                    sample_time / batch_times_buffers_per_sample)
-                self._writer.add_scalar(
-                    i, 'monitoring/train_time_per_item',
-                    step_time / batch_times_buffers_per_sample)
-                self._writer.add_scalar(
-                    i, 'monitoring/memory_gb',
-                    process.memory_info().rss * 1e-9)
-                self._writer.add_scalar(
-                    i, 'monitoring/cpu_percent',
-                    process.cpu_percent(interval=None) / num_cpu)
+                self._writer.add_summaries(i, buffer_summaries)
 
             self._writer.end_iteration()
 

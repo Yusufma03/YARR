@@ -6,4 +6,4 @@ timeout-decorator
 pyrender
 omegaconf
 hydra-core
-
+wandb
