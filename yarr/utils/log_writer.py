@@ -125,5 +125,7 @@ class LogWriter(object):
             self._row_data = OrderedDict()
 
     def close(self):
-        if self._tensorboard_logging:
+        if self._wandb_logging:
+            self._writer.finish()
+        elif self._tensorboard_logging:
             self._writer.close()
