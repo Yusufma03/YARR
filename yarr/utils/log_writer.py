@@ -6,7 +6,7 @@ from collections import OrderedDict
 import numpy as np
 import torch
 from yarr.agents.agent import ScalarSummary, HistogramSummary, ImageSummary, \
-    VideoSummary
+    VideoSummary, AttentionSummary
 from torch.utils.tensorboard import SummaryWriter
 import wandb
 
@@ -93,6 +93,21 @@ class LogWriter(object):
                     v = (summary.value if summary.value.ndim == 5 else
                          np.array([summary.value]))
                     data[summary.name] = wandb.Video(v, fps=summary.fps)
+                elif isinstance(summary, AttentionSummary):
+                    assert summary.value.ndim == 3
+                    dx, dy, dz = summary.value.shape
+                    v = summary.value
+                    v = (v - v.min()) / (v.max() - v.min()) * 13
+                    v = np.floor(v).astype(np.float32) + 1
+
+                    log_arr = np.array([
+                        [x, y, z, v[x, y, z]]
+                        for x in range(dx)
+                        for y in range(dy)
+                        for z in range(dz)
+                    ])
+                    data[summary.name] = wandb.Object3D(log_arr)
+
             except Exception as e:
                 logging.error('Error on summary: %s' % summary.name)
                 raise e
