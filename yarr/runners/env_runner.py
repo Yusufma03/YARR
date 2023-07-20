@@ -5,8 +5,7 @@ import signal
 import time
 from multiprocessing import Value
 from threading import Thread
-from typing import List
-from typing import Union
+from typing import List, Optional, Union
 
 import numpy as np
 import torch
@@ -36,7 +35,9 @@ class EnvRunner(object):
                  rollout_generator: RolloutGenerator = None,
                  weightsdir: str = None,
                  max_fails: int = 10,
-                 env_device: torch.device = None):
+                 env_device: torch.device = None,
+                 frame_stack: Optional[int] = None,
+        ):
         self._train_env = train_env
         self._eval_env = eval_env if eval_env else train_env
         self._agent = agent
@@ -44,6 +45,8 @@ class EnvRunner(object):
         self._eval_envs = num_eval_envs
         self._train_replay_buffer = train_replay_buffer if isinstance(train_replay_buffer, list) else [train_replay_buffer]
         self._timesteps = self._train_replay_buffer[0].timesteps
+        if frame_stack is not None:
+            self._timesteps = frame_stack
         if eval_replay_buffer is not None:
             eval_replay_buffer = eval_replay_buffer if isinstance(eval_replay_buffer, list) else [eval_replay_buffer]
         self._eval_replay_buffer = eval_replay_buffer
