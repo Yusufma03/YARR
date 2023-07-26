@@ -98,7 +98,8 @@ class UniformReplayBuffer(ReplayBuffer):
                  observation_elements: List[ObservationElement] = None,
                  extra_replay_elements: List[ReplayElement] = None,
                  save_dir: str = None,
-                 purge_replay_on_shutdown: bool = True
+                 purge_replay_on_shutdown: bool = True,
+                 traj_rewards: bool = False,
                  ):
         """Initializes OutOfGraphReplayBuffer.
 
@@ -120,6 +121,8 @@ class UniformReplayBuffer(ReplayBuffer):
             the extra contents that will be stored and returned.
           extra_storage_elements: list of ReplayElement defining the type of
             the extra contents that will be stored and returned.
+          traj_rewards: bool indicating whether to compute n-step return for the
+            rewards
 
         Raises:
           ValueError: If replay_capacity is too small to hold at least one
@@ -164,6 +167,8 @@ class UniformReplayBuffer(ReplayBuffer):
         self._update_horizon = update_horizon
         self._gamma = gamma
         self._max_sample_attempts = max_sample_attempts
+
+        self._traj_rewards = traj_rewards
 
         self._observation_elements = observation_elements
         self._extra_replay_elements = extra_replay_elements
@@ -705,11 +710,22 @@ class UniformReplayBuffer(ReplayBuffer):
                                 state_index, terminal_stack)
                     elif element.name == REWARD:
                         # compute discounted sum of rewards in the trajectory.
-                        element_array[batch_element] = np.sum(
-                            trajectory_discount_vector * trajectory_rewards,
-                            axis=0)
+                        if not self._traj_rewards:
+                            element_array[batch_element] = np.sum(
+                                trajectory_discount_vector *
+                                trajectory_rewards,
+                                axis=0)
+                        else:
+                            element_array[batch_element] = self._get_element_stack(
+                                    store[element.name],
+                                    state_index,
+                                    terminal_stack,
+                                    )
                     elif element.name == TERMINAL:
-                        element_array[batch_element] = is_terminal_transition
+                        if not self._traj_rewards:
+                            element_array[batch_element] = is_terminal_transition
+                        else:
+                            element_array[batch_element] = terminal_stack
                     elif element.name == INDICES:
                         element_array[batch_element] = state_index
                     elif element.name in store.keys():
@@ -735,12 +751,20 @@ class UniformReplayBuffer(ReplayBuffer):
         transition_elements = [
             ReplayElement(ACTION, (batch_size,) + self._action_shape,
                           self._action_dtype),
-            ReplayElement(REWARD, (batch_size,) + self._reward_shape,
-                          self._reward_dtype),
-            ReplayElement(TERMINAL, (batch_size,), np.int8),
+            # ReplayElement(REWARD, (batch_size,) + self._reward_shape,
+            #               self._reward_dtype),
+            # ReplayElement(TERMINAL, (batch_size,), np.int8),
             ReplayElement(TIMEOUT, (batch_size,), bool),
             ReplayElement(INDICES, (batch_size,), np.int32),
         ]
+
+        rew_ter_shape = (batch_size, self._timesteps) if self._traj_rewards else (batch_size,)
+        transition_elements.extend(
+                [
+                    ReplayElement(REWARD, rew_ter_shape, self._reward_dtype),
+                    ReplayElement(TERMINAL, rew_ter_shape, np.int8),
+                    ]
+                )
 
         for element in self._observation_elements:
             transition_elements.append(ReplayElement(
