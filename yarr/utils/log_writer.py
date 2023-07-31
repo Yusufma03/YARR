@@ -82,7 +82,9 @@ class LogWriter(object):
                 if isinstance(summary, ScalarSummary):
                     data[summary.name] = summary.value
                 elif isinstance(summary, HistogramSummary):
-                    continue
+                    if torch.is_tensor(summary.value):
+                        summary.value = summary.value.cpu().detach().numpy()
+                    data[summary.name] = wandb.Histogram(summary.value)
                 elif isinstance(summary, ImageSummary):
                     # Only grab first item in batch
                     v = (summary.value if summary.value.ndim == 3 else
