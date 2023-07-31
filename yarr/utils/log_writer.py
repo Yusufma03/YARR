@@ -101,7 +101,7 @@ class LogWriter(object):
                     v = np.floor(v).astype(np.float32) + 1
 
                     log_arr = np.array([
-                        [x, y, z, v[x, y, z]]
+                        [x * 0.1, y * 0.1, z * 0.1, v[x, y, z]]
                         for x in range(dx)
                         for y in range(dy)
                         for z in range(dz)
