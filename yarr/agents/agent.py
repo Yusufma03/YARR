@@ -20,6 +20,10 @@ class ImageSummary(Summary):
     pass
 
 
+class TextSummary(Summary):
+    pass
+
+
 class AttentionSummary(Summary):
     pass
 
@@ -31,11 +35,13 @@ class VideoSummary(Summary):
 
 
 class ActResult(object):
-
-    def __init__(self, action: Any,
-                 observation_elements: dict = None,
-                 replay_elements: dict = None,
-                 info: dict = None):
+    def __init__(
+        self,
+        action: Any,
+        observation_elements: dict = None,
+        replay_elements: dict = None,
+        info: dict = None,
+    ):
         self.action = action
         self.observation_elements = observation_elements or {}
         self.replay_elements = replay_elements or {}
@@ -43,7 +49,6 @@ class ActResult(object):
 
 
 class Agent(ABC):
-
     @abstractmethod
     def build(self, training: bool, device=None) -> None:
         pass

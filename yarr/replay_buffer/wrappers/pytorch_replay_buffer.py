@@ -1,14 +1,13 @@
 import time
 from threading import Lock, Thread
 
-from torch.utils.data import IterableDataset, DataLoader
+from torch.utils.data import DataLoader, IterableDataset
 
 from yarr.replay_buffer.replay_buffer import ReplayBuffer
 from yarr.replay_buffer.wrappers import WrappedReplayBuffer
 
 
 class PyTorchIterableReplayDataset(IterableDataset):
-
     def __init__(self, replay_buffer: ReplayBuffer):
         self._replay_buffer = replay_buffer
 
@@ -18,6 +17,7 @@ class PyTorchIterableReplayDataset(IterableDataset):
 
     def __iter__(self):
         return iter(self._generator())
+
 
 # class PyTorchIterableReplayDataset(IterableDataset):
 #

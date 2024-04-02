@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import Tuple, List
+from typing import List, Tuple
+
 
 class ReplayElement(object):
     def __init__(self, name, shape, type, is_observation=False):
@@ -10,15 +11,13 @@ class ReplayElement(object):
 
 
 class ReplayBuffer(ABC):
-
     def replay_capacity(self):
         pass
 
     def batch_size(self):
         pass
 
-    def get_storage_signature(self) -> Tuple[List[ReplayElement],
-                                             List[ReplayElement]]:
+    def get_storage_signature(self) -> Tuple[List[ReplayElement], List[ReplayElement]]:
         pass
 
     def add(self, action, reward, terminal, timeout, **kwargs):
@@ -57,8 +56,7 @@ class ReplayBuffer(ABC):
     def unpack_transition(self, transition_tensors, transition_type):
         pass
 
-    def sample_transition_batch(self, batch_size=None, indices=None,
-                                pack_in_dict=True):
+    def sample_transition_batch(self, batch_size=None, indices=None, pack_in_dict=True):
         pass
 
     def get_transition_elements(self, batch_size=None):

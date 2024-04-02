@@ -8,7 +8,6 @@ from yarr.utils.transition import Transition
 
 
 class Env(ABC):
-
     def __init__(self):
         self._active_task_id = 0
         self._eval_env = False
@@ -57,7 +56,6 @@ class Env(ABC):
 
 
 class MultiTaskEnv(Env):
-
     @property
     @abstractmethod
     def num_tasks(self) -> int:

@@ -5,7 +5,6 @@ from yarr.replay_buffer.replay_buffer import ReplayBuffer
 
 
 class WrappedReplayBuffer(ABC):
-
     def __init__(self, replay_buffer: ReplayBuffer):
         """Initializes WrappedReplayBuffer.
 
