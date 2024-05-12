@@ -158,12 +158,9 @@ class RLBenchEnv(Env):
         self._observation_config = observation_config
         self._channels_last = channels_last
         self._include_lang_goal_in_obs = include_lang_goal_in_obs
-        # self._rlbench_env = Environment(
-        #     action_mode=action_mode, obs_config=observation_config,
-        #     dataset_root=dataset_root, headless=headless)
         self._rlbench_env = Environment(
-            action_mode=action_mode, obs_config=observation_config, headless=headless
-        )
+            action_mode=action_mode, obs_config=observation_config,
+            dataset_root=dataset_root, headless=headless)
 
         self._task = None
         self._lang_goal = "unknown goal"
